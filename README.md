@@ -8,7 +8,8 @@ $ sbt run
 ```
 
 ## Members 
-Kévin Hassan 
-Yves-Alain Agbodjogbe
-Clément Loubière
-Elyess Doudech
+* Kévin Hassan 
+* Yves-Alain Agbodjogbe
+* Joris Granel
+* Clément Loubière
+* Elyess Doudech
