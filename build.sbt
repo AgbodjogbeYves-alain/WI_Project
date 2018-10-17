@@ -9,4 +9,5 @@ lazy val root = (project in file(".")).
     )),
     name := "wi_project",
     libraryDependencies += scalaTest % Test
+    libraryDependencies += "org.apache.spark" %% "spark-sql" % "2.3.2"
   )
