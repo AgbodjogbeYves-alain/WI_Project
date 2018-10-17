@@ -1,9 +1,11 @@
 package example
 
-object Hello extends Greeting with App {
-  println(greeting)
-}
+import org.apache.spark.sql.SparkSession
 
-trait Greeting {
-  lazy val greeting: String = "hello"
+object SimpleApp extends App {
+  val file = "data-students.json" // Should be some file on your system
+  val spark = SparkSession.builder.appName("Simple Application").getOrCreate()
+  val logData = spark.read.json(file).cache()
+  println(logData.flatMap(line => line.split(",")))
+  spark.stop()
 }
