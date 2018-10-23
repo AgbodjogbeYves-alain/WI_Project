@@ -3,6 +3,8 @@ package wi
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.udf
 import scala.collection.immutable.HashMap
+import org.apache.spark.ml.feature.VectorAssembler
+import org.apache.spark.ml.linalg.Vectors
 
 object Cleaner {
   /**
@@ -55,5 +57,12 @@ object Cleaner {
   def impid(dataFrame: DataFrame): DataFrame = {
     val nDataFrame = dataFrame.drop("impid")
     return(nDataFrame)
+  }
+
+  def indextype(dataFrame: DataFrame): DataFrame = {
+    val assembler = new VectorAssembler()
+      .setInputCols(dataFrame.select("type").collect().map(r => if(r == null) "null" else r.toString).toArray)
+      .setOutputCol("type")
+      val ndf = assembler.transform(dataFrame)
   }
 }
