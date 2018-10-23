@@ -3,6 +3,7 @@ package wi
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.udf
 import scala.collection.immutable.HashMap
+import org.apache.spark.ml.feature.StringIndexer
 import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.ml.linalg.Vectors
 
@@ -59,10 +60,25 @@ object Cleaner {
     return(nDataFrame)
   }
 
-  def indextype(dataFrame: DataFrame): DataFrame = {
-    val assembler = new VectorAssembler()
-      .setInputCols(dataFrame.select("type").collect().map(r => if(r == null) "null" else r.toString).toArray)
-      .setOutputCol("type")
-      val ndf = assembler.transform(dataFrame)
+  /**
+    Return a new dataframe with the given column filled with the given value
+    @param dataFrame DataFrame to change 
+    @param columnName name of the columns to change
+    @param value String with which to fill
+  */
+  def fillWithString(dataFrame: DataFrame, columnName : String, value : String): DataFrame = {
+    val ndf = dataFrame.na.fill(value, Seq(columnName))
+    return ndf
   }
+
+  def indextype(dataFrame: DataFrame): DataFrame = {
+    val ndf = fillWithString(dataFrame, "type", "null")
+    val indexer = new StringIndexer()
+      .setInputCol("type")
+      .setOutputCol("indextype")
+    val indexed = indexer.fit(ndf).transform(ndf)
+    indexed.drop("type")
+    return indexed
+  }
+  
 }
