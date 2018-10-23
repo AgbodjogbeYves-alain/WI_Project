@@ -29,7 +29,7 @@ object Cleaner {
       "Bada"->OS.BADA,
       "windows"->OS.WINDOWS
     )
-    val updater = udf((col: String) => osMap(col).toString)
+    val updater = udf((col: String) => if(osMap.contains(col)) osMap(col).toString else osMap("Unknown"))
     dataFrame.withColumn(Column.OS.toString, updater(dataFrame(Column.OS.toString)))
   }
   /**
