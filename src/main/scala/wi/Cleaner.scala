@@ -43,4 +43,22 @@ object Cleaner {
     })
     dataFrame.withColumn(Column.INTERESTS.toString, replacer(dataFrame(Column.INTERESTS.toString)))
   }
+
+  /**
+    Return a new dataframe without the timestamp column
+    @param dataFrame DataFrame to change 
+  */
+  def timestamp(dataFrame: DataFrame): DataFrame = {
+    val nDataFrame = dataFrame.drop("timestamp")
+    return(nDataFrame)
+  }
+
+  /**
+    Return a new dataframe without the impid column
+    @param dataFrame DataFrame to change 
+  */
+  def impid(dataFrame: DataFrame): DataFrame = {
+    val nDataFrame = dataFrame.drop("impid")
+    return(nDataFrame)
+  }
 }
