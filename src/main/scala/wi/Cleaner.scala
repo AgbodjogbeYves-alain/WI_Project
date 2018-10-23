@@ -10,27 +10,22 @@ object Cleaner {
     @param dataFrame DataFrame to change
   */
   def os(dataFrame: DataFrame): DataFrame = {
-    val osMap = HashMap(
-      "android"->OS.ANDROID,
-      "iOS"->OS.IOS,
-      "Windows Phone OS"->OS.WINDOWS_PHONE,
-      "null"->OS.NULL,
-      "other"->OS.UNKNOWN,
-      "Unknown"->OS.UNKNOWN,
-      "blackberry"->OS.BLACKBERRY,
-      "WebOS"->OS.WEBOS,
-      "WindowsPhone"->OS.WINDOWS_PHONE,
-      "Windows Mobile OS"->OS.WINDOWS_PHONE,
-      "WindowsMobile"->OS.WINDOWS_PHONE,
-      "Android"->OS.ANDROID,
-      "Symbian"->OS.SYMBIAN,
-      "Rim"->OS.BLACKBERRY,
-      "ios"->OS.IOS,
-      "Bada"->OS.BADA,
-      "windows"->OS.WINDOWS
-    )
-    val updater = udf((col: String) => if(osMap.contains(col)) osMap(col).toString else osMap("Unknown"))
-    dataFrame.withColumn(Column.OS.toString, updater(dataFrame(Column.OS.toString)))
+    val updater = udf((col: String) => {
+      col match{
+        case "android"|"Android" => "android"
+        case "iOS" | "ios" => "iOS"
+        case "Windows Phone OS" | "WindowsPhone" | "Windows Mobile OS" | "WindowsMobile" => "windows phone"
+        case "null" => "null"
+        case "other" | "Unknown" => "unknown"
+        case "blackberry"| "Rim" => "blackberry"
+        case "WebOS" => "webOS"
+        case "Symbian" => "symbian"
+        case "Bada" => "bada"
+        case "windows" => "windows"
+        case _ => "unknown"
+      }
+    })
+    dataFrame.withColumn("os", updater(dataFrame("os")))
   }
   /**
     Return the most important interest for an user
