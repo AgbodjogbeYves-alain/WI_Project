@@ -35,8 +35,10 @@ object Cleaner {
     val replacer = udf((col: String) => {
       val values = col.split(",")
       if (values.nonEmpty) values(0) else "null"
+      
     })
     dataFrame.withColumn(Column.INTERESTS.toString, replacer(dataFrame(Column.INTERESTS.toString)))
+  
   }
 
   /**
@@ -55,5 +57,13 @@ object Cleaner {
   def impid(dataFrame: DataFrame): DataFrame = {
     val nDataFrame = dataFrame.drop("impid")
     return(nDataFrame)
+  }
+
+  def appOrSite(dataFrame: Data)
+
+  
+
+  def passToVector(dataFrame: DataFrame) : DataFrame = {
+
   }
 }

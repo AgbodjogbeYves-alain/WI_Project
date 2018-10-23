@@ -7,7 +7,9 @@ object Main extends App {
   val spark = SparkSession.builder.appName("Wi_App").config("spark.master", "local").getOrCreate()
   val dfJson = spark.read.json(file)
   dfJson.printSchema()
-  val nDataFrame = Cleaner.timestamp(dfJson)
-  val nnDataFrame = Cleaner.impid(nDataFrame)
+  println("-------------"+Cleaner.countMaxInterests(dfJson)+"----------------")
+  //val nDataFrame = Cleaner.timestamp(dfJson)
+  //val nnDataFrame = Cleaner.impid(nDataFrame)
+
   spark.stop()
 }
