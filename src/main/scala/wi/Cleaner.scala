@@ -30,6 +30,21 @@ object Cleaner {
     })
     dataFrame.withColumn("os", updater(dataFrame("os")))
   }
+
+  /**
+    tranform boolean to int
+    @param b Boolean to change
+  */
+  def boolToInt(b:Boolean) = if(b) 1 else 0
+  val boolToInt_udf = udf(boolToInt _)
+  /**
+    transform label attribute to int
+    @param dataFrame DataFrame to change
+  */
+  def label(dataFrame: DataFrame): DataFrame = {
+    dataFrame.withColumn(Column.LABEL.toString, boolToInt_udf(dataFrame(Column.LABEL.toString)))
+  }
+
   /**
     Return the most important interest for an user
     @param dataFrame DataFrame to change 
@@ -151,6 +166,7 @@ object Cleaner {
     ndf = stringIndexerDF(ndf)
     ndf = impid(ndf)
     ndf = interests(ndf)
+    ndf = label(ndf)
     return ndf
   }
 }
