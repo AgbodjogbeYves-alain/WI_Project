@@ -10,14 +10,14 @@ import org.apache.spark.mllib.evaluation.MulticlassMetrics
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
 
+import scala.io.StdIn
+
 object Main extends App {
   val file = "data-students.json" // Should be some file on your system
   val spark = SparkSession.builder.appName("Wi_App").config("spark.master", "local").getOrCreate()
   val dfJson = spark.read.json(file)
   val df = Cleaner.prepareDF(dfJson)
   df.show()
-  println("********");
   LogisticRegressionOperation.logisticRegression(df)
-  println("********");
   spark.stop()
 }
