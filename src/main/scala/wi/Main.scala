@@ -16,5 +16,8 @@ object Main extends App {
   val dfJson = spark.read.json(file)
   val df = Cleaner.prepareDF(dfJson)
   df.show()
+  println("********");
+  LogisticRegressionOperation.logisticRegression(df)
+  println("********");
   spark.stop()
 }

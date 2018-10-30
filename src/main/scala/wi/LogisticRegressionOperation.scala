@@ -7,7 +7,7 @@ import org.apache.spark.sql.DataFrame
 object LogisticRegressionOperation {
   def logisticRegression(dataFrame: DataFrame) =
   {
-    val assembler = new VectorAssembler().setInputCols(Array("os")).setOutputCol("features")
+    val assembler = new VectorAssembler().setInputCols(dataFrame).setOutputCol("features")
     //val training = spark.read.format("libsvm").load("data/mllib/sample_libsvm_data.txt")
 
     val lr = new LogisticRegression()
@@ -20,8 +20,8 @@ object LogisticRegressionOperation {
     val output = assembler.transform(dataFrame)
 
     //Fit the model
-    //val lrModel = lr.fit(output)
-    val lrModel = lr.fit(dataFrame)
+    val lrModel = lr.fit(output)
+    //val lrModel = lr.fit(dataFrame)
 
 
     // Print the coefficients and intercept for logistic regression
