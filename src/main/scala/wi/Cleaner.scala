@@ -32,7 +32,7 @@ object Cleaner {
   }
 
   /**
-    tranform boolean to int
+    transform boolean to int
     @param b Boolean to change
   */
   def boolToInt(b:Boolean) = if(b) 1 else 0
@@ -55,6 +55,17 @@ object Cleaner {
       if (values.nonEmpty) values(0) else "null"
     })
     dataFrame.withColumn(Column.INTERESTS.toString, replacer(dataFrame(Column.INTERESTS.toString)))
+  }
+
+  /**
+    Return the bidfloor of the user with 2 decimals
+    @param dataFrame DataFrame to change 
+  */
+  def bidFloor(dataFrame: DataFrame): DataFrame = {
+    val replacer = udf((col: Double) => {
+        BigDecimal(col).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
+    })
+    dataFrame.withColumn(Column.BID_FLOOR.toString, replacer(dataFrame(Column.BID_FLOOR.toString)))
   }
 
   /**
@@ -98,6 +109,18 @@ object Cleaner {
   }
 
   /**
+    Return a new dataframe with the given column element rounded to the nearest int
+    @param dataFrame DataFrame to change 
+    @param columnName name of the columns to change
+  */
+  def roundDouble(dataFrame: DataFrame, columnName : String): DataFrame = {
+    val replacer = udf((col: Int) => {
+        col.toInt.toDouble
+    })
+    dataFrame.withColumn(columnName, replacer(dataFrame(columnName)))
+  }
+
+  /**
     Return a new dataframe with the given column filled with the given Boolean value
     @param dataFrame DataFrame to change 
     @param columnName name of the columns to change
@@ -119,14 +142,17 @@ object Cleaner {
       .setOutputCol("index" + column)
     val indexed = indexer.fit(dataFrame).transform(dataFrame)
     val nindexed = indexed.drop(column)
-    return nindexed
+    val renamedindexed = nindexed.withColumnRenamed("index" + column, column)
+    return renamedindexed
   }
 
-  def toVector(dataFrame: DataFrame, column: String): DataFrame = {
-    new VectorAssembler()
-      .setInputCols(Array(column))
-      .setOutputCol("vector" + column)
-      .transform(dataFrame)
+
+  def toVector(dataFrame: DataFrame): DataFrame = {
+    val assembleur = new VectorAssembler()
+      .setInputCols(Array(Column.APP_OR_SITE.toString,Column.BID_FLOOR.toString, Column.CITY.toString, Column.EXCHANGE.toString, Column.MEDIA.toString, Column.NETWORK.toString, Column.OS.toString, Column.PUBLISHER.toString, Column.TYPE.toString, Column.INTERESTS.toString))
+      .setOutputCol("features")
+    val assembled = assembleur.transform(dataFrame)
+    return assembled
   }
 
   def fillDF(dataFrame: DataFrame): DataFrame = {
@@ -157,16 +183,18 @@ object Cleaner {
     indexedDF = toIndex(indexedDF, Column.OS.toString)
     indexedDF = toIndex(indexedDF, Column.PUBLISHER.toString)
     indexedDF = toIndex(indexedDF, Column.TYPE.toString)
+    indexedDF = toIndex(indexedDF, Column.INTERESTS.toString)
     return indexedDF
   }
 
   def prepareDF(dataFrame: DataFrame): DataFrame ={
     var ndf = dataFrame
     ndf = fillDF(ndf)
-    ndf = stringIndexerDF(ndf)
     ndf = impid(ndf)
     ndf = interests(ndf)
     ndf = label(ndf)
+    ndf = stringIndexerDF(ndf)
+    ndf = toVector(ndf)
     return ndf
   }
 }

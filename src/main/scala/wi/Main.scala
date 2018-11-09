@@ -5,10 +5,10 @@ import org.apache.spark.ml.Pipeline
 import org.apache.spark.ml.classification.LogisticRegression
 import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
-import org.apache.spark.mllib.evaluation.MulticlassMetrics
-import org.apache.spark.mllib.regression.LabeledPoint
-import org.apache.spark.mllib.util.MLUtils
+import org.apache.spark.ml.regression.GeneralizedLinearRegression
+import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
+import org.apache.spark.ml.classification.LogisticRegression
+import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
 
 import scala.io.StdIn
 
@@ -16,8 +16,36 @@ object Main extends App {
   val file = "data-students.json" // Should be some file on your system
   val spark = SparkSession.builder.appName("Wi_App").config("spark.master", "local").getOrCreate()
   val dfJson = spark.read.json(file)
-  val df = Cleaner.prepareDF(dfJson)
-  df.show()
-  LogisticRegressionOperation.logisticRegression(df)
+  val dfCleaned = Cleaner.prepareDF(dfJson)
+  dfCleaned.show()
+  val splits = dfCleaned.randomSplit(Array(0.5, 0.5))
+  var (trainingData, testData) = (splits(0), splits(1))
+  trainingData = trainingData.select("features", "label")
+  testData = testData.select("features", "label")
+
+  val lr = new LogisticRegression()
+    .setFeaturesCol("features")
+    .setLabelCol("label")
+    .setRegParam(0.0)
+    .setElasticNetParam(0.0)
+    .setMaxIter(10)
+    .setTol(1E-6)
+    .setFitIntercept(true)
+
+  val model = lr.fit(trainingData)
+  println(s"-------------------------Coefficients: ${model.coefficients}")
+  println(s"-------------------------Intercept: ${model.interceptVector}")
+
+  val prediction = model.transform(testData)
+  prediction.printSchema()
+  prediction.select ("label", "prediction","rawPrediction").show()
+
+  val evaluator = new BinaryClassificationEvaluator()
+    .setMetricName("areaUnderROC")
+    .setRawPredictionCol("rawPrediction")
+    .setLabelCol("label")
+
+  val eval = evaluator.evaluate(prediction)
+  println("Test set areaunderROC/accuracy = " + eval)
   spark.stop()
 }
