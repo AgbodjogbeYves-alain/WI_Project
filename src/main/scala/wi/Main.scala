@@ -18,7 +18,7 @@ object Main extends App {
   val dfJson = spark.read.json(file)
   val dfCleaned = Cleaner.prepareDF(dfJson)
   dfCleaned.show()
-  val splits = dfCleaned.randomSplit(Array(0.5, 0.5))
+  val splits = dfCleaned.randomSplit(Array(0.7, 0.3))
   var (trainingData, testData) = (splits(0), splits(1))
   trainingData = trainingData.select("features", "label")
   testData = testData.select("features", "label")
@@ -36,6 +36,8 @@ object Main extends App {
   println(s"-------------------------Coefficients: ${model.coefficients}")
   println(s"-------------------------Intercept: ${model.interceptVector}")
 
+  //model.write.save("target/tmp/WILogisticRegression")
+  
   val prediction = model.transform(testData)
   prediction.printSchema()
   prediction.select ("label", "prediction","rawPrediction").show()
@@ -47,5 +49,7 @@ object Main extends App {
 
   val eval = evaluator.evaluate(prediction)
   println("Test set areaunderROC/accuracy = " + eval)
+
+  prediction.select("label", "prediction").write.format("csv").option("header","true").save("target/tmp/Resulst")
   spark.stop()
 }

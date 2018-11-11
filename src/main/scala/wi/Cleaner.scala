@@ -149,7 +149,7 @@ object Cleaner {
 
   def toVector(dataFrame: DataFrame): DataFrame = {
     val assembleur = new VectorAssembler()
-      .setInputCols(Array(Column.APP_OR_SITE.toString,Column.BID_FLOOR.toString, Column.CITY.toString, Column.EXCHANGE.toString, Column.MEDIA.toString, Column.NETWORK.toString, Column.OS.toString, Column.PUBLISHER.toString, Column.TYPE.toString, Column.INTERESTS.toString))
+      .setInputCols(Array(Column.EXCHANGE.toString, Column.BID_FLOOR.toString, Column.EXCHANGE.toString, Column.MEDIA.toString, Column.OS.toString, Column.TYPE.toString))
       .setOutputCol("features")
     val assembled = assembleur.transform(dataFrame)
     return assembled
