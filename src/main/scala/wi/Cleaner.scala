@@ -147,14 +147,22 @@ object Cleaner {
   }
 
 
+  /**
+    Return a new dataframe where VectorAssembler 
+    @param dataFrame DataFrame to change 
+  */
   def toVector(dataFrame: DataFrame): DataFrame = {
     val assembleur = new VectorAssembler()
-      .setInputCols(Array(Column.EXCHANGE.toString, Column.BID_FLOOR.toString, Column.EXCHANGE.toString, Column.MEDIA.toString, Column.OS.toString, Column.TYPE.toString))
+      .setInputCols(Array(Column.APP_OR_SITE.toString, Column.BID_FLOOR.toString, Column.EXCHANGE.toString, Column.MEDIA.toString, Column.OS.toString, Column.TYPE.toString))
       .setOutputCol("features")
     val assembled = assembleur.transform(dataFrame)
     return assembled
   }
 
+  /**
+    Return a new dataframe with all the column filled with corresponding value
+    @param dataFrame DataFrame to change 
+  */
   def fillDF(dataFrame: DataFrame): DataFrame = {
     var filldf = dataFrame
     filldf = fillWithString(filldf, Column.APP_OR_SITE.toString, "null")
@@ -173,6 +181,10 @@ object Cleaner {
     return filldf
   }
   
+  /**
+    Return a new dataframe with column string indexed
+    @param dataFrame DataFrame to change 
+  */
   def stringIndexerDF(dataFrame: DataFrame): DataFrame = {
     var indexedDF = dataFrame
     indexedDF = toIndex(indexedDF, Column.APP_OR_SITE.toString)
@@ -187,6 +199,10 @@ object Cleaner {
     return indexedDF
   }
 
+  /**
+    Return a new dataframe with all the prepare method to prepare the data
+    @param dataFrame DataFrame to change 
+  */
   def prepareDF(dataFrame: DataFrame): DataFrame ={
     var ndf = dataFrame
     ndf = fillDF(ndf)
