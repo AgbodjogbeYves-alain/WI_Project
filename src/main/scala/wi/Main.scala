@@ -64,7 +64,7 @@ object Main extends App {
 
     println("Loading the model")
     //Load the model
-    val rfModel = RandomForestClassificationModel.load("model/WIRandomForrestModel")
+    val rfModel = RandomForestClassificationModel.load("model/WIRandomForestModel")
     
     println("Predicting value with the model")
     //Use the model to predict the label column
@@ -90,8 +90,6 @@ object Main extends App {
     //val finalDF = ndFforCSV.withColumnRenamed("prediction", "Label")
     val finalDF = Cleaner.sizeforCSV(ndFforCSV)
 
-    finalDF.printSchema()
-    finalDF.show()
     println("Saving the results as a CSV")
     //Save the prediction into a csv
     finalDF.write.format("csv").option("header","true").save("target/tmp/ResultRF")
