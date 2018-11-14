@@ -85,19 +85,26 @@ object Main extends App {
     val testDataWithID = dfCleaned.withColumn("rowId2", monotonically_increasing_id())
     val predictedLabel = predictionWithID.select("prediction","rowId1")
     val lastDF = predictedLabel.join(testDataWithID, predictedLabel("rowId1")===testDataWithID("rowId2"))
-    val dFforCSV = lastDF.drop("rowId1").drop("rowId2").drop("features").drop("size")
+    val dFforCSV = lastDF.drop("rowId1").drop("rowId2").drop("features")
     val ndFforCSV = Cleaner.prediction(dFforCSV)
-    val finalDF = ndFforCSV.withColumnRenamed("prediction", "Label")
-    
-    ndFforCSV.printSchema()
-    ndFforCSV.show()
+    //val finalDF = ndFforCSV.withColumnRenamed("prediction", "Label")
+    val finalDF = Cleaner.sizeforCSV(ndFforCSV)
+
+    finalDF.printSchema()
+    finalDF.show()
     println("Saving the results as a CSV")
     //Save the prediction into a csv
-    dFforCSV.write.format("csv").option("header","true").save("target/tmp/ResultRF")
+    finalDF.write.format("csv").option("header","true").save("target/tmp/ResultRF")
 
     println("CSV available in target/tmp/ResultsRF")
     spark.stop()
   }
 
-  useModel("test.json")
+  if(args.isEmpty){
+    println("You must enter the path of the file to predict in parameter")
+  }else{
+    val param = args
+    useModel(param(0))
+  }
+
 }

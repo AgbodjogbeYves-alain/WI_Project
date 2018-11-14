@@ -4,7 +4,7 @@ Project to analyse add's data with Spark to lead to a predictive model.
 
 ## Instructions 
 ```shell
-$ sbt run
+$ sbt "run path/to/your/file"
 ```
 
 ## Members 

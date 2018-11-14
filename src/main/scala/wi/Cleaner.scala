@@ -6,6 +6,7 @@ import scala.collection.immutable.HashMap
 import org.apache.spark.ml.feature.StringIndexer
 import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.ml.linalg.Vectors
+import scala.collection.mutable
 
 object Cleaner {
   /**
@@ -37,6 +38,7 @@ object Cleaner {
   */
   def boolToInt(b:Boolean) = if(b) 1 else 0
   val boolToInt_udf = udf(boolToInt _)
+  
   /**
     transform label attribute to int
     @param dataFrame DataFrame to change
@@ -51,6 +53,7 @@ object Cleaner {
   */
   def doubleToBool(double: Double) = if(double == 1.0) true else false
   val doubleToBool_udf = udf(doubleToBool _)
+
   /**
     transform prediction attribute to bool
     @param dataFrame DataFrame to change
@@ -71,15 +74,20 @@ object Cleaner {
     dataFrame.withColumn(Column.INTERESTS.toString, replacer(dataFrame(Column.INTERESTS.toString)))
   }
 
+
   /**
-    Return the bidfloor of the user with 2 decimals
+    transform Array[Long] to String
+    @param value Array[Long] to change
+  */
+  def arrayLongToString(value: mutable.WrappedArray[Long]) = s"""[${value.mkString(",")}]"""
+  val arrayLongToString_udf = udf(arrayLongToString _)
+
+  /**
+    Return the dataframe with csv with the size as a String
     @param dataFrame DataFrame to change 
   */
-  def bidFloor(dataFrame: DataFrame): DataFrame = {
-    val replacer = udf((col: Double) => {
-        BigDecimal(col).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
-    })
-    dataFrame.withColumn(Column.BID_FLOOR.toString, replacer(dataFrame(Column.BID_FLOOR.toString)))
+  def sizeforCSV(dataFrame: DataFrame): DataFrame = {
+    dataFrame.withColumn(Column.SIZE.toString, (dataFrame(Column.SIZE.toString)).cast("string"))
   }
 
   /**
