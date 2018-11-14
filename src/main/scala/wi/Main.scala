@@ -87,7 +87,6 @@ object Main extends App {
     val lastDF = predictedLabel.join(testDataWithID, predictedLabel("rowId1")===testDataWithID("rowId2"))
     val dFforCSV = lastDF.drop("rowId1").drop("rowId2").drop("features")
     val ndFforCSV = Cleaner.prediction(dFforCSV)
-    //val finalDF = ndFforCSV.withColumnRenamed("prediction", "Label")
     val finalDF = Cleaner.sizeforCSV(ndFforCSV)
 
     println("Saving the results as a CSV")
@@ -98,6 +97,20 @@ object Main extends App {
     spark.stop()
   }
 
+  try{
+    if(args.isEmpty){
+      println("You must enter the path of the file to predict in parameter")
+    }else{
+      val param = args
+      useModel(param(0))
+    }
+  }catch{
+    case e: org.apache.hadoop.mapred.InvalidInputException => {
+      createModel()
+      val param = args
+      useModel(param(0))
+    }
+  }
   if(args.isEmpty){
     println("You must enter the path of the file to predict in parameter")
   }else{
