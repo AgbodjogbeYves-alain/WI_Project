@@ -46,6 +46,20 @@ object Cleaner {
   }
 
   /**
+    transform Double to boolean
+    @param double Double to change
+  */
+  def doubleToBool(double: Double) = if(double == 1.0) true else false
+  val doubleToBool_udf = udf(doubleToBool _)
+  /**
+    transform prediction attribute to bool
+    @param dataFrame DataFrame to change
+  */
+  def prediction(dataFrame: DataFrame): DataFrame = {
+    dataFrame.withColumn("prediction", doubleToBool_udf(dataFrame("prediction")))
+  }
+
+  /**
     Return the most important interest for an user
     @param dataFrame DataFrame to change 
   */
@@ -106,18 +120,6 @@ object Cleaner {
   def fillWithDouble(dataFrame: DataFrame, columnName : String, value : Double): DataFrame = {
     val ndf = dataFrame.na.fill(value, Seq(columnName))
     return ndf
-  }
-
-  /**
-    Return a new dataframe with the given column element rounded to the nearest int
-    @param dataFrame DataFrame to change 
-    @param columnName name of the columns to change
-  */
-  def roundDouble(dataFrame: DataFrame, columnName : String): DataFrame = {
-    val replacer = udf((col: Int) => {
-        col.toInt.toDouble
-    })
-    dataFrame.withColumn(columnName, replacer(dataFrame(columnName)))
   }
 
   /**
