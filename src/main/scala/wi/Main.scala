@@ -4,8 +4,6 @@ import breeze.linalg.max
 import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
-import org.apache.spark.ml.classification.LogisticRegression
-import org.apache.spark.ml.classification.LogisticRegressionModel
 import org.apache.spark.ml.classification.RandomForestClassificationModel
 import org.apache.spark.ml.classification.RandomForestClassifier
 import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
@@ -20,13 +18,18 @@ object Main extends App {
     Function to create and save the models
   **/
   def createModel(): Unit = {
+
     val file = "data-students.json" // File data-student to train
     Logger.getLogger("org").setLevel(Level.ERROR) //Remove all the INFO prompt
     val spark = SparkSession.builder.appName("Wi_App").config("spark.master", "local").getOrCreate() //Create spark session
+    println("Loading data")
     val dfJson = spark.read.json(file) //get dataFrame from the file
+    println("Preparing data")
     val dfCleaned = Cleaner.prepareDF(dfJson) //Clean dataFrame
-    dfCleaned.show()
-    val splits = dfCleaned.randomSplit(Array(0.7, 0.3)) //split the dataFrame into training and test part
+    println("Creating the model")
+
+    //split the dataFrame into training and test part
+    val splits = dfCleaned.randomSplit(Array(0.7, 0.3)) 
     var (trainingData, testData) = (splits(0), splits(1))
 
     //Create RandomForrest
@@ -36,9 +39,12 @@ object Main extends App {
 
     //Create model with the trianing dataFrame
     val rfModel = rf.fit(trainingData)
+    println("Model created")
 
     //Save the model
-    rfModel.write.save("target/tmp/WIRandomForrest")
+    rfModel.write.save("model/WIRandomForestModel")
+    println("Model saved")
+
     spark.stop()
   }
 
@@ -47,17 +53,22 @@ object Main extends App {
   **/
   def useModel(path: String): Unit = {
 
+    Logger.getLogger("org").setLevel(Level.ERROR) //Remove all the INFO prompt
+    val spark = SparkSession.builder.appName("Wi_App").config("spark.master", "local").getOrCreate() //Create spark session
+    
+    println("Loading data")
     val dfJson = spark.read.json(path) //get dataFrame from the file
 
-    Logger.getLogger("org").setLevel(Level.ERROR) //Remove all the INFO prompt
+    println("Preparing data")
+    val dfCleaned = Cleaner.prepareDF(dfJson) //Clean dataFrame
 
+    println("Loading the model")
     //Load the model
-    val rfModel = RandomForestClassificationModel.load("target/tmp/WIRandomForrest")
+    val rfModel = RandomForestClassificationModel.load("model/WIRandomForrestModel")
     
+    println("Predicting value with the model")
     //Use the model to predict the label column
-    val rfPrediction = rfModel.transform(testData)
-
-    rfPrediction.select("label", "prediction", "rawPrediction").show()
+    val rfPrediction = rfModel.transform(dfCleaned)
 
     //Create the evaluator to evaluate the prediction
     val evaluator = new BinaryClassificationEvaluator()
@@ -71,77 +82,22 @@ object Main extends App {
 
     //Prepare the dataframe to be save as a CSV
     val predictionWithID = rfPrediction.withColumn("rowId1", monotonically_increasing_id())
-    val testDataWithID = testData.withColumn("rowId2", monotonically_increasing_id())
+    val testDataWithID = dfCleaned.withColumn("rowId2", monotonically_increasing_id())
     val predictedLabel = predictionWithID.select("prediction","rowId1")
     val lastDF = predictedLabel.join(testDataWithID, predictedLabel("rowId1")===testDataWithID("rowId2"))
-    val dFforCSV = lastDF.drop("rowId1").drop("rowId2").drop("features")
+    val dFforCSV = lastDF.drop("rowId1").drop("rowId2").drop("features").drop("size")
     val ndFforCSV = Cleaner.prediction(dFforCSV)
     val finalDF = ndFforCSV.withColumnRenamed("prediction", "Label")
-
+    
+    ndFforCSV.printSchema()
+    ndFforCSV.show()
+    println("Saving the results as a CSV")
     //Save the prediction into a csv
-    finalDF.write.format("csv").option("header","true").save("target/tmp/ResulstRF")
+    dFforCSV.write.format("csv").option("header","true").save("target/tmp/ResultRF")
+
+    println("CSV available in target/tmp/ResultsRF")
+    spark.stop()
   }
 
-
-
-
-
-
-
-
-  val file = "data-students.json" // File data-student to train
-  Logger.getLogger("org").setLevel(Level.ERROR) //Remove all the INFO prompt
-  val spark = SparkSession.builder.appName("Wi_App").config("spark.master", "local").getOrCreate() //Create spark session
-  val dfJson = spark.read.json(file) //get dataFrame from the file
-  val dfCleaned = Cleaner.prepareDF(dfJson) //Clean dataFrame
-  dfCleaned.show()
-  val splits = dfCleaned.randomSplit(Array(0.7, 0.3)) //split the dataFrame into training and test part
-  var (trainingData, testData) = (splits(0), splits(1))
-
-  //Create RandomForrest
-  val rf = new RandomForestClassifier()
-    .setFeaturesCol("features")
-    .setLabelCol("label")
-
-  //Create both model with the trianing dataFrame
-  val rfModel = rf.fit(trainingData)
-
-  //Save the models 
-  //model.write.save("target/tmp/WILogisticRegression")
-  //rfModel.write.save("target/tmp/WIRandomForrest")
-
-  //Use the model to predict the label column
-  val rfPrediction = rfModel.transform(testData)
-
-  rfPrediction.select("label", "prediction", "rawPrediction").show()
-
-  //Create the evaluator to evaluate the prediction
-  val evaluator = new BinaryClassificationEvaluator()
-    .setMetricName("areaUnderROC")
-    .setRawPredictionCol("rawPrediction")
-    .setLabelCol("label")
-
-  //Evaluate the prediction with area under ROC
-  val accuracy = evaluator.evaluate(rfPrediction)
-  println("Test set Random Forest accuracy = " + accuracy)
-
-  //Prepare the dataframe to be save as a CSV
-  val predictionWithID = rfPrediction.withColumn("rowId1", monotonically_increasing_id())
-  val testDataWithID = testData.withColumn("rowId2", monotonically_increasing_id())
-  val predictedLabel = predictionWithID.select("prediction","rowId1")
-  val lastDF = predictedLabel.join(testDataWithID, predictedLabel("rowId1")===testDataWithID("rowId2"))
-  val dFforCSV = lastDF.drop("rowId1").drop("rowId2").drop("features")
-  val ndFforCSV = Cleaner.prediction(dFforCSV)
-  val finalDF = ndFforCSV.withColumnRenamed("prediction", "Label")
-  finalDF.show()
-
-  //Save the prediction into a csv
-  //prediction.select("label", "prediction").write.format("csv").option("header","true").save("target/tmp/ResultLR")
-  //dFforCSV.write.format("csv").option("header","true").save("target/tmp/ResultRF")
-
-  //Load the models
-  //val lrModel = LogisticRegressionModel.load("target/tmp/WILogisticRegression")
-  //val rfModel = RandomForestClassificationModel.load("target/tmp/WIRandomForrest")
-
-  spark.stop()
+  useModel("test.json")
 }
