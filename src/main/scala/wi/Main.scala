@@ -28,33 +28,16 @@ object Main extends App {
     dfCleaned.show()
     val splits = dfCleaned.randomSplit(Array(0.7, 0.3)) //split the dataFrame into training and test part
     var (trainingData, testData) = (splits(0), splits(1))
-    trainingData = trainingData.select("features", "label") //DataFrame to train with only label and features columnn
-    testData = testData.select("features", "label") //DataFrame to test with only label and features columnn
-
-    //Create LogisticRegression 
-    val lr = new LogisticRegression()
-      .setFeaturesCol("features")
-      .setLabelCol("label")
-      .setRegParam(0.0)
-      .setElasticNetParam(0.0)
-      .setMaxIter(10)
-      .setTol(1E-6)
-      .setFitIntercept(true)
 
     //Create RandomForrest
     val rf = new RandomForestClassifier()
       .setFeaturesCol("features")
       .setLabelCol("label")
 
-    //Create both model with the trianing dataFrame
-    val model = lr.fit(trainingData)
+    //Create model with the trianing dataFrame
     val rfModel = rf.fit(trainingData)
 
-    println(s"-------------------------Coefficients: ${model.coefficients}")
-    println(s"-------------------------Intercept: ${model.interceptVector}")
-
-    //Save the models 
-    model.write.save("target/tmp/WILogisticRegression")
+    //Save the model
     rfModel.write.save("target/tmp/WIRandomForrest")
     spark.stop()
   }
@@ -68,15 +51,12 @@ object Main extends App {
 
     Logger.getLogger("org").setLevel(Level.ERROR) //Remove all the INFO prompt
 
-    //Load the models
-    val model = LogisticRegressionModel.load("target/tmp/WILogisticRegression")
+    //Load the model
     val rfModel = RandomForestClassificationModel.load("target/tmp/WIRandomForrest")
     
     //Use the model to predict the label column
-    val prediction = model.transform(testData)
     val rfPrediction = rfModel.transform(testData)
 
-    prediction.select ("label", "prediction", "rawPrediction").show()
     rfPrediction.select("label", "prediction", "rawPrediction").show()
 
     //Create the evaluator to evaluate the prediction
@@ -87,13 +67,19 @@ object Main extends App {
 
     //Evaluate the prediction with area under ROC
     val accuracy = evaluator.evaluate(rfPrediction)
-    val eval = evaluator.evaluate(prediction)
-    println("Test set areaunderROC/accuracy = " + eval)
     println("Test set Random Forest accuracy = " + accuracy)
 
+    //Prepare the dataframe to be save as a CSV
+    val predictionWithID = rfPrediction.withColumn("rowId1", monotonically_increasing_id())
+    val testDataWithID = testData.withColumn("rowId2", monotonically_increasing_id())
+    val predictedLabel = predictionWithID.select("prediction","rowId1")
+    val lastDF = predictedLabel.join(testDataWithID, predictedLabel("rowId1")===testDataWithID("rowId2"))
+    val dFforCSV = lastDF.drop("rowId1").drop("rowId2").drop("features")
+    val ndFforCSV = Cleaner.prediction(dFforCSV)
+    val finalDF = ndFforCSV.withColumnRenamed("prediction", "Label")
+
     //Save the prediction into a csv
-    prediction.select("label", "prediction").write.format("csv").option("header","true").save("target/tmp/ResultLR")
-    rfPrediction.select("label", "prediction").write.format("csv").option("header","true").save("target/tmp/ResulstRF")
+    finalDF.write.format("csv").option("header","true").save("target/tmp/ResulstRF")
   }
 
 
