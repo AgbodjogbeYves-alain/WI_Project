@@ -56,15 +56,15 @@ object Main extends App {
     Logger.getLogger("org").setLevel(Level.ERROR) //Remove all the INFO prompt
     val spark = SparkSession.builder.appName("Wi_App").config("spark.master", "local").getOrCreate() //Create spark session
     
+    println("Loading the model")
+    //Load the model
+    val rfModel = RandomForestClassificationModel.load("model/WIRandomForestModel")
+
     println("Loading data")
     val dfJson = spark.read.json(path) //get dataFrame from the file
 
     println("Preparing data")
     val dfCleaned = Cleaner.prepareDF(dfJson) //Clean dataFrame
-
-    println("Loading the model")
-    //Load the model
-    val rfModel = RandomForestClassificationModel.load("model/WIRandomForestModel")
     
     println("Predicting value with the model")
     //Use the model to predict the label column
@@ -105,17 +105,11 @@ object Main extends App {
       useModel(param(0))
     }
   }catch{
+    //If there is no model to load
     case e: org.apache.hadoop.mapred.InvalidInputException => {
       createModel()
       val param = args
       useModel(param(0))
     }
   }
-  if(args.isEmpty){
-    println("You must enter the path of the file to predict in parameter")
-  }else{
-    val param = args
-    useModel(param(0))
-  }
-
 }
