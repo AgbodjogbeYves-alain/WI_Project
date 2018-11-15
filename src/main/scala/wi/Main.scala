@@ -2,7 +2,7 @@ package wi
 
 import breeze.linalg.max
 import org.apache.spark.ml.feature.VectorAssembler
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.ml.classification.RandomForestClassificationModel
 import org.apache.spark.ml.classification.RandomForestClassifier
@@ -91,7 +91,7 @@ object Main extends App {
 
     println("Saving the results as a CSV")
     //Save the prediction into a csv
-    finalDF.write.format("csv").option("header","true").save("target/tmp/ResultRF")
+    finalDF.write.format("csv").option("header","true").mode(SaveMode.Overwrite).save("target/tmp/ResultRF")
 
     println("CSV available in target/tmp/ResultsRF")
     spark.stop()
