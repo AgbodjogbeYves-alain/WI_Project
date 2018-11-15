@@ -190,6 +190,27 @@ object Cleaner {
     filldf = fillWithString(filldf, Column.USER.toString, "null")
     return filldf
   }
+
+  /**
+    Return a new dataframe with all the column filled with corresponding value
+    @param dataFrame DataFrame to change 
+  */
+  def fillDFPredict(dataFrame: DataFrame): DataFrame = {
+    var filldf = dataFrame
+    filldf = fillWithString(filldf, Column.APP_OR_SITE.toString, "null")
+    filldf = fillWithDouble(filldf, Column.BID_FLOOR.toString, 0.0)
+    filldf = fillWithString(filldf, Column.CITY.toString, "null")
+    filldf = fillWithString(filldf, Column.EXCHANGE.toString, "null")
+    filldf = fillWithString(filldf, Column.INTERESTS.toString, "null")
+    filldf = fillWithString(filldf, Column.MEDIA.toString, "null")
+    filldf = fillWithString(filldf, Column.NETWORK.toString, "null")
+    filldf = fillWithString(filldf, Column.OS.toString, "null")
+    filldf = os(filldf)
+    filldf = fillWithString(filldf, Column.PUBLISHER.toString, "null")
+    filldf = fillWithString(filldf, Column.TYPE.toString, "null")
+    filldf = fillWithString(filldf, Column.USER.toString, "null")
+    return filldf
+  }
   
   /**
     Return a new dataframe with column string indexed
@@ -219,6 +240,20 @@ object Cleaner {
     ndf = impid(ndf)
     ndf = interests(ndf)
     ndf = label(ndf)
+    ndf = stringIndexerDF(ndf)
+    ndf = toVector(ndf)
+    return ndf
+  }
+
+  /**
+    Return a new dataframe with all the prepare method to prepare the data for prediction
+    @param dataFrame DataFrame to change 
+  */
+  def prepareDFPredict(dataFrame: DataFrame): DataFrame ={
+    var ndf = dataFrame
+    ndf = fillDFPredict(ndf)
+    ndf = impid(ndf)
+    ndf = interests(ndf)
     ndf = stringIndexerDF(ndf)
     ndf = toVector(ndf)
     return ndf

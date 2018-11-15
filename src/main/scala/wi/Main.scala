@@ -64,21 +64,11 @@ object Main extends App {
     val dfJson = spark.read.json(path) //get dataFrame from the file
 
     println("Preparing data")
-    val dfCleaned = Cleaner.prepareDF(dfJson) //Clean dataFrame
+    val dfCleaned = Cleaner.prepareDFPredict(dfJson) //Clean dataFrame
     
     println("Predicting value with the model")
     //Use the model to predict the label column
     val rfPrediction = rfModel.transform(dfCleaned)
-
-    //Create the evaluator to evaluate the prediction
-    val evaluator = new BinaryClassificationEvaluator()
-      .setMetricName("areaUnderROC")
-      .setRawPredictionCol("rawPrediction")
-      .setLabelCol("label")
-
-    //Evaluate the prediction with area under ROC
-    val accuracy = evaluator.evaluate(rfPrediction)
-    println("Test set Random Forest accuracy = " + accuracy)
 
     //Prepare the dataframe to be save as a CSV
     val predictionWithID = rfPrediction.withColumn("rowId1", monotonically_increasing_id())
@@ -87,9 +77,11 @@ object Main extends App {
     val lastDF = predictedLabel.join(testDataWithID, predictedLabel("rowId1")===testDataWithID("rowId2"))
     val dFforCSV = lastDF.drop("rowId1").drop("rowId2").drop("features")
     val ndFforCSV = Cleaner.prediction(dFforCSV)
-    val finalDF = Cleaner.sizeforCSV(ndFforCSV)
+    val fDF = ndFforCSV.withColumnRenamed("prediction", "Label")
+    val finalDF = Cleaner.sizeforCSV(fDF)
 
     println("Saving the results as a CSV")
+
     //Save the prediction into a csv
     finalDF.write.format("csv").option("header","true").mode(SaveMode.Overwrite).save("target/tmp/ResultRF")
 
@@ -107,6 +99,7 @@ object Main extends App {
   }catch{
     //If there is no model to load
     case e: org.apache.hadoop.mapred.InvalidInputException => {
+      println("No model found, creating one")
       createModel()
       val param = args
       useModel(param(0))
